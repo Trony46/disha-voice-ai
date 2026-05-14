@@ -1,67 +1,163 @@
-# 🇮🇳 Disha — The Hinglish Support AI
-### Autonomous Multi-Agent Swarm for Indian Logistics
+<div align="center">
 
-Western AIs don't understand our desi slang, and local uncles hate typing on apps. **Disha** is a voice-native, multi-agent swarm that listens to raw, angry Hinglish voice notes, understands the intent, securely queries a logistics database, and replies in a calming Indian voice. 
+# Disha — Hinglish Voice Support AI
 
-**Zero typing required.**
+*Speak angry Hinglish. Get a calm reply. Zero typing.*
 
-Built for the **Activate AI Hackathon** in under 10 hours using sovereign Indian AI models.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-FF6B35?style=flat)](https://langchain-ai.github.io/langgraph/)
+[![Sarvam AI](https://img.shields.io/badge/Sarvam%20AI-Powered-6C3EE8?style=flat)](https://sarvam.ai)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io)
 
----
-
-## ⚙️ Tech Stack
-* **Speech-to-Text:** Sarvam Saaras v3 (Handles code-mixed Hinglish & phonetic Hindi tracking numbers)
-* **LLM / Brain:** Sarvam-M (Free reasoning model)
-* **Text-to-Speech:** Sarvam Bulbul v3 (Natural Indian voices)
-* **Agentic Framework:** LangGraph (Multi-node routing and state management)
-* **Backend:** FastAPI
-* **Frontend:** Streamlit 
+**[🌐 Live App](https://disha-voice-ai.streamlit.app)**
+</div>
 
 ---
 
-## 🏗️ System Architecture
-
-1. **Voice-In:** User records a `.wav` file on the Streamlit frontend.
-2. **Transcription:** FastAPI receives the audio and hits Saaras STT.
-3. **LangGraph Swarm:**
-    * `Node 1 (Classifier)`: Extracts emotion and forcefully translates phonetic Hindi tracking IDs (e.g., "ए डब्ल्यू बी वन टू थ्री") into standard alphanumeric AWBs (e.g., "AWB123").
-    * `Node 2 (Database)`: Queries the local SQLite logistics database.
-    * `Node 3 (Response)`: Sarvam-M drafts a 2-sentence empathetic Hinglish reply based on the DB result.
-4. **Voice-Out:** Bulbul TTS converts the reply to audio bytes.
-5. **Stream Back:** FastAPI returns the URL-encoded headers and audio stream to the frontend for auto-playback.
+Disha is a voice-native support agent that understands how Indians actually talk. You speak your complaint in Hinglish — she transcribes it, figures out your emotion, pulls your shipment status from a database, and replies back in a calm Indian voice. Under 15 seconds, start to finish.
 
 ---
 
-## 🚀 Live Deployment
-* **Frontend:** [Link to your Streamlit Cloud app]
-* **Backend:** Hosted on Render (Kept alive via UptimeRobot ping)
+## Stack
+
+| | |
+|---|---|
+| **STT** | Sarvam Saaras v3 |
+| **LLM** | Sarvam-M |
+| **TTS** | Sarvam Bulbul v3 |
+| **Agents** | LangGraph |
+| **Backend** | FastAPI |
+| **Frontend** | Streamlit |
+| **DB** | SQLite |
 
 ---
 
-## 💻 Local Setup (Windows)
+## How it works
 
-### 1. Get API Keys
-Get your free API key from [dashboard.sarvam.ai](https://dashboard.sarvam.ai).
-Create a `.env` file in the root directory:
-```env
-SARVAM_API_KEY=sk_your_actual_key_here
+```
+mic input (.wav)
+      │
+      ▼
+Saaras v3 STT  ──►  Hinglish transcript
+      │
+      ▼
+LangGraph Swarm
+  ├── Node 1: classify_intent
+  │     detects emotion + extracts AWB number
+  │     (translates phonetic Hindi "ए डब्ल्यू बी" → "AWB123")
+  │
+  ├── Node 2: lookup_logistics        (skipped if no AWB found)
+  │     queries SQLite for shipment status
+  │
+  └── Node 3: generate_response
+        Sarvam-M writes empathetic Hinglish reply
+      │
+      ▼
+Bulbul v3 TTS  ──►  WAV audio bytes
+      │
+      ▼
+streamed back to browser → auto-plays
+```
 
+### Agent State
 
-python -m venv venv
-venv\Scripts\activate
+```python
+class SupportState(TypedDict):
+    user_audio_text:   str
+    detected_emotion:  str            # angry | frustrated | calm | neutral
+    extracted_awb:     Optional[str]  # AWB123 or None
+    logistics_status:  Optional[str]  # result from DB
+    agent_reply_text:  str
+```
+
+---
+
+## Mock Data
+
+Pre-seeded SQLite DB with these shipments — use any AWB number in your complaint:
+
+| AWB | Status | Location | Note |
+|---|---|---|---|
+| `AWB001` | 🔴 Delayed | Delhi Hub | Rain, road blockage |
+| `AWB002` | 🔵 In Transit | Lucknow | On time |
+| `AWB003` | 🟠 Out for Delivery | Your City | With agent |
+| `AWB004` | 🟣 Customs Hold | Mumbai Airport | Docs pending |
+| `AWB005` | 🟢 Delivered | — | Done |
+| `AWB123` | 🔴 Delayed | Ghaziabad Depot | NH-9 breakdown |
+| `AWB999` | 🔴 Lost | Unknown | Under investigation |
+
+**Try saying:**
+```
+"Bhai AWB123 kahan hai, ek hafte se nahi aaya!"
+"Mera AWB999 lost ho gaya kya?!"
+```
+
+> No AWB in your speech? The router skips the DB node and Disha asks you for it politely.
+
+---
+
+## Local Setup
+
+```bash
+git clone https://github.com/Trony46/disha-voice-support
+cd disha-voice-support
+
+python -m venv venv && venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 
+cp .env.example .env   # add your SARVAM_API_KEY
+```
+
+Get a free key at [dashboard.sarvam.ai](https://dashboard.sarvam.ai).
+
+```bash
+# Terminal 1 — backend
 uvicorn main:app --reload --port 8000
 
-venv\Scripts\activate
+# Terminal 2 — frontend
 streamlit run streamlit_app.py
+```
 
+---
 
-🛠️ Build Hurdles Conquered
-Dependency Clashes: Handled strict versioning conflicts between langchain-core and langgraph.
+## API
 
-The Unicode Crash: Prevented fatal FastAPI 500 errors by URL-encoding raw Devanagari script in HTTP response headers.
+### `POST /api/voice-support`
 
-TTS Payload Limits: Filtered out Sarvam-M's internal <think> reasoning tags via regex to prevent crashing the Bulbul TTS 500-character limit.
+Runs the full pipeline. Accepts `.wav`, returns `audio/wav` stream.
 
-Phonetic Extraction: Engineered prompts to translate literal Hindi word-numbers into English alphanumeric database keys.
+| Header (response) | Description |
+|---|---|
+| `X-Transcription` | URL-encoded transcript of user speech |
+| `X-Reply-Text` | URL-encoded Hinglish reply text |
+
+Other endpoints: `GET /` health check · `GET /api/test-db` · `GET /docs` Swagger UI
+
+---
+
+## Bugs I Hit
+
+**1. Dependency clash** — newer `langgraph` rejected the pinned `langchain-core`. Fixed by bumping to the compatible version range and doing a clean reinstall.
+
+**2. Sarvam silent deprecations** — `saaras:v2` and the `meera` TTS voice were removed without notice. Updated to `saaras:v3` and a working speaker.
+
+**3. `<think>` tags broke TTS** — Sarvam-M outputs reasoning inside `<think>` blocks which blew past Bulbul's 500-char limit. Stripped with regex before hitting TTS. Also hit `UnicodeEncodeError` sending raw Hindi in HTTP headers — fixed with `urllib.parse.quote/unquote` on both ends.
+
+**4. Phonetic Hindi AWB gap** — Saaras transcribed "AWB123" as `ए डब्ल्यू बी वन टू थ्री`. Regex missed it entirely. Fixed by prompting Sarvam-M to transliterate phonetic Hindi into alphanumeric before the regex runs.
+
+---
+
+## Project Structure
+
+```
+├── main.py            # FastAPI — pipeline orchestration
+├── agent.py           # LangGraph — 3-node swarm
+├── sarvam_client.py   # Saaras / Sarvam-M / Bulbul wrappers
+├── database.py        # SQLite mock DB
+├── streamlit_app.py   # Frontend
+├── requirements.txt
+└── .env.example
+```
+
+---
