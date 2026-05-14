@@ -3,7 +3,7 @@ import urllib.parse
 import requests
 import streamlit as st
 
-FASTAPI_URL = "http://localhost:8000/api/voice-support"
+FASTAPI_URL = "https://disha-voice-ai.onrender.com/api/voice-support"
 PRODUCT_NAME = "Disha"
 BUILDER_NAME = "Ashmit Shaw"
 BUILDER_GITHUB = "https://github.com/Trony46"
